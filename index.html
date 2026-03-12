@@ -9,342 +9,71 @@
   :root {
     --ink:       #1a1a18;
     --parchment: #f5f0e8;
-    --cream:     #ede8dc;
     --rule:      #c8bfa8;
     --accent:    #8b1a1a;
     --accent2:   #2a4a6b;
     --muted:     #6b6456;
-    --success:   #2d5a2d;
     --mono:      'JetBrains Mono', monospace;
     --serif:     'Libre Baskerville', serif;
   }
-
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--parchment);
-    color: var(--ink);
-    font-family: var(--serif);
-    font-size: 15px;
-    line-height: 1.7;
-    min-height: 100vh;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      repeating-linear-gradient(
-        transparent,
-        transparent 27px,
-        rgba(180,160,120,0.18) 27px,
-        rgba(180,160,120,0.18) 28px
-      );
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .shell {
-    position: relative;
-    z-index: 1;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 48px 32px 80px;
-  }
-
-  header {
-    border-bottom: 3px double var(--rule);
-    padding-bottom: 20px;
-    margin-bottom: 36px;
-  }
-
-  .court-mark {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  h1 {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    color: var(--ink);
-  }
-
+  body { background: var(--parchment); color: var(--ink); font-family: var(--serif); font-size: 15px; line-height: 1.7; min-height: 100vh; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: repeating-linear-gradient(transparent, transparent 27px, rgba(180,160,120,0.18) 27px, rgba(180,160,120,0.18) 28px); pointer-events: none; z-index: 0; }
+  .shell { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+  header { border-bottom: 3px double var(--rule); padding-bottom: 20px; margin-bottom: 36px; }
+  .court-mark { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
   h1 span { color: var(--accent); }
-
-  .subtitle {
-    margin-top: 6px;
-    font-size: 13px;
-    font-style: italic;
-    color: var(--muted);
-  }
-
+  .subtitle { margin-top: 6px; font-size: 13px; font-style: italic; color: var(--muted); }
   .form-section { margin-bottom: 28px; }
-
-  label {
-    display: block;
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 7px;
-  }
-
-  textarea, input[type="text"], input[type="password"] {
-    width: 100%;
-    background: rgba(255,255,255,0.55);
-    border: 1px solid var(--rule);
-    border-bottom: 2px solid var(--rule);
-    padding: 10px 13px;
-    font-family: var(--serif);
-    font-size: 14px;
-    color: var(--ink);
-    line-height: 1.6;
-    outline: none;
-    transition: border-color 0.15s, background 0.15s;
-    -webkit-appearance: none;
-  }
-
-  textarea:focus, input:focus {
-    border-color: var(--accent2);
-    background: rgba(255,255,255,0.8);
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 140px;
-    font-size: 13.5px;
-  }
-
-  .key-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    align-items: end;
-  }
-
-  .key-toggle {
-    background: none;
-    border: 1px solid var(--rule);
-    padding: 10px 14px;
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: border-color 0.15s, color 0.15s;
-  }
+  label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+  textarea, input[type="text"], input[type="password"] { width: 100%; background: rgba(255,255,255,0.55); border: 1px solid var(--rule); border-bottom: 2px solid var(--rule); padding: 10px 13px; font-family: var(--serif); font-size: 14px; color: var(--ink); line-height: 1.6; outline: none; transition: border-color 0.15s, background 0.15s; -webkit-appearance: none; }
+  textarea:focus, input:focus { border-color: var(--accent2); background: rgba(255,255,255,0.8); }
+  textarea { resize: vertical; min-height: 140px; font-size: 13.5px; }
+  .key-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+  .key-toggle { background: none; border: 1px solid var(--rule); padding: 10px 14px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--muted); cursor: pointer; white-space: nowrap; transition: border-color 0.15s, color 0.15s; }
   .key-toggle:hover { border-color: var(--accent2); color: var(--accent2); }
-
-  .run-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--accent);
-    color: #f5f0e8;
-    border: none;
-    padding: 13px 28px;
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    cursor: pointer;
-    margin-top: 20px;
-    transition: background 0.15s, transform 0.1s;
-  }
+  .run-btn { display: flex; align-items: center; gap: 10px; background: var(--accent); color: #f5f0e8; border: none; padding: 13px 28px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; margin-top: 20px; transition: background 0.15s, transform 0.1s; }
   .run-btn:hover { background: #6b1212; }
   .run-btn:active { transform: translateY(1px); }
   .run-btn:disabled { background: var(--rule); cursor: not-allowed; }
-  .run-btn svg { flex-shrink: 0; }
-
-  #progress {
-    display: none;
-    margin-top: 24px;
-    padding: 14px 16px;
-    border-left: 3px solid var(--accent2);
-    background: rgba(42,74,107,0.06);
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--accent2);
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 10px; height: 10px;
-    border: 2px solid var(--accent2);
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin-right: 8px;
-    vertical-align: middle;
-  }
-
+  #progress { display: none; margin-top: 24px; padding: 14px 16px; border-left: 3px solid var(--accent2); background: rgba(42,74,107,0.06); font-family: var(--mono); font-size: 12px; color: var(--accent2); }
+  .spinner { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--accent2); border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
   #results { margin-top: 40px; }
-
-  .results-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    border-bottom: 2px solid var(--ink);
-    padding-bottom: 8px;
-    margin-bottom: 28px;
-  }
-
-  .results-title {
-    font-size: 13px;
-    font-family: var(--mono);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-
-  .results-count {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .citation-card {
-    margin-bottom: 32px;
-    border: 1px solid var(--rule);
-    background: rgba(255,255,255,0.45);
-    animation: fadeUp 0.35s ease both;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .card-header {
-    padding: 14px 18px 12px;
-    border-bottom: 1px solid var(--rule);
-    background: rgba(200,191,168,0.2);
-  }
-
-  .case-name {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 5px;
-  }
-
-  .case-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    font-family: var(--mono);
-    font-size: 10.5px;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-  }
-
+  .results-header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 28px; }
+  .results-title { font-size: 13px; font-family: var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
+  .results-count { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .citation-card { margin-bottom: 32px; border: 1px solid var(--rule); background: rgba(255,255,255,0.45); animation: fadeUp 0.35s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .card-header { padding: 14px 18px 12px; border-bottom: 1px solid var(--rule); background: rgba(200,191,168,0.2); }
+  .case-name { font-size: 16px; font-weight: 700; margin-bottom: 5px; }
+  .case-meta { display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.05em; }
   .case-meta a { color: var(--accent2); text-decoration: none; }
   .case-meta a:hover { text-decoration: underline; }
-
-  .meta-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .meta-tag::before {
-    content: '';
-    display: inline-block;
-    width: 5px; height: 5px;
-    background: var(--rule);
-    border-radius: 50%;
-  }
-
+  .meta-tag { display: inline-flex; align-items: center; gap: 4px; }
+  .meta-tag::before { content: ''; display: inline-block; width: 5px; height: 5px; background: var(--rule); border-radius: 50%; }
   .card-body { padding: 16px 18px; }
-
-  .para-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-
-  .para-text {
-    font-size: 13.5px;
-    line-height: 1.75;
-    color: var(--ink);
-    padding: 14px 18px;
-    border-left: 3px solid var(--accent);
-    background: rgba(139,26,26,0.04);
-    font-style: italic;
-    white-space: pre-wrap;
-  }
-
-  .para-not-found {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    padding: 10px 0;
-    font-style: italic;
-  }
-
-  .error-card {
-    padding: 12px 16px;
-    border-left: 3px solid var(--accent);
-    background: rgba(139,26,26,0.06);
-    font-family: var(--mono);
-    font-size: 11.5px;
-    color: var(--accent);
-  }
-
-  .copy-btn {
-    background: none;
-    border: 1px solid var(--rule);
-    padding: 5px 10px;
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    cursor: pointer;
-    float: right;
-    margin-top: -2px;
-    transition: border-color 0.15s, color 0.15s;
-  }
+  .para-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .para-text { font-size: 13.5px; line-height: 1.75; padding: 14px 18px; border-left: 3px solid var(--accent); background: rgba(139,26,26,0.04); font-style: italic; white-space: pre-wrap; }
+  .para-not-found { font-family: var(--mono); font-size: 11px; color: var(--muted); padding: 10px 0; font-style: italic; }
+  .error-card { padding: 12px 16px; border-left: 3px solid var(--accent); background: rgba(139,26,26,0.06); font-family: var(--mono); font-size: 11.5px; color: var(--accent); }
+  .copy-btn { background: none; border: 1px solid var(--rule); padding: 5px 10px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: var(--muted); cursor: pointer; float: right; margin-top: -2px; transition: border-color 0.15s, color 0.15s; }
   .copy-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-
-  .footnote {
-    margin-top: 48px;
-    padding-top: 16px;
-    border-top: 1px solid var(--rule);
-    font-size: 11.5px;
-    font-style: italic;
-    color: var(--muted);
-    line-height: 1.6;
-  }
+  .footnote { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 11.5px; font-style: italic; color: var(--muted); line-height: 1.6; }
 </style>
 </head>
 <body>
 <div class="shell">
-
   <header>
     <div class="court-mark">European Court of Human Rights</div>
     <h1>Citation <span>Resolver</span></h1>
     <p class="subtitle">Paste legal text below — citations are extracted and paragraphs retrieved from HUDOC automatically.</p>
   </header>
-
   <div class="form-section">
     <label for="inputText">Legal text containing citations</label>
-    <textarea id="inputText" placeholder="e.g. The Court reiterates that … (see Bazjaks v. Latvia, no. 71572/01, § 85, 19 October 2010, and Selmouni v. France [GC], no. 25803/94, § 74, ECHR 1999‑V)."></textarea>
+    <textarea id="inputText" placeholder="e.g. (see Bazjaks v. Latvia, no. 71572/01, § 85, 19 October 2010)"></textarea>
   </div>
-
   <div class="form-section">
     <label for="apiKey">Anthropic API key</label>
     <div class="key-row">
@@ -352,57 +81,54 @@
       <button class="key-toggle" onclick="toggleKey()">Show</button>
     </div>
   </div>
-
   <button class="run-btn" id="runBtn" onclick="run()">
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-      <polygon points="2,1 11,6 2,11"/>
-    </svg>
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
     Resolve Citations
   </button>
-
   <div id="progress"></div>
   <div id="results"></div>
-
-  <p class="footnote">
-    Your API key is used only for this session and is never stored or transmitted anywhere other than api.anthropic.com.
-    Full judgment text is fetched from hudoc.echr.coe.int via a private proxy.
-  </p>
-
+  <p class="footnote">Your API key is sent only to your private Cloudflare Worker and from there to api.anthropic.com. It is never stored or logged. Judgment text is fetched from hudoc.echr.coe.int via the same Worker.</p>
 </div>
-
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-const CLAUDE_MODEL      = 'claude-sonnet-4-20250514';
-const ANTHROPIC_VERSION = '2023-06-01';
-const PROXY             = 'https://hudoc-proxy.smartnik80.workers.dev';
+const WORKER = 'https://hudoc-proxy.smartnik80.workers.dev';
 
-// ── UI HELPERS ────────────────────────────────────────────────────────────────
 function toggleKey() {
   const inp = document.getElementById('apiKey');
   const btn = document.querySelector('.key-toggle');
-  if (inp.type === 'password') { inp.type = 'text';     btn.textContent = 'Hide'; }
-  else                         { inp.type = 'password'; btn.textContent = 'Show'; }
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
+  else { inp.type = 'password'; btn.textContent = 'Show'; }
 }
 
 function setProgress(msg) {
   const el = document.getElementById('progress');
   if (!msg) { el.style.display = 'none'; return; }
   el.style.display = 'block';
-  el.innerHTML = `<span class="spinner"></span>${escHtml(msg)}`;
+  el.innerHTML = '<span class="spinner"></span>' + escHtml(msg);
 }
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── PROXY FETCH ───────────────────────────────────────────────────────────────
 async function proxyFetch(url) {
-  const resp = await fetch(`${PROXY}?url=${encodeURIComponent(url)}`);
-  if (!resp.ok) throw new Error(`Proxy error: HTTP ${resp.status}`);
+  const resp = await fetch(WORKER + '?url=' + encodeURIComponent(url));
+  if (!resp.ok) throw new Error('Proxy error: HTTP ' + resp.status);
   return resp.text();
 }
 
-// ── MAIN ──────────────────────────────────────────────────────────────────────
+async function claudePost(apiKey, body) {
+  const resp = await fetch(WORKER + '/anthropic', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': apiKey },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error('HTTP ' + resp.status + ': ' + (err && err.error && err.error.message ? err.error.message : resp.statusText));
+  }
+  return resp.json();
+}
+
 async function run() {
   const inputText = document.getElementById('inputText').value.trim();
   const apiKey    = document.getElementById('apiKey').value.trim();
@@ -415,33 +141,31 @@ async function run() {
   btn.disabled = true;
   resultsEl.innerHTML = '';
 
-  setProgress('Asking Claude to identify citations…');
+  setProgress('Asking Claude to identify citations...');
   let citations;
   try {
     citations = await extractCitations(inputText, apiKey);
   } catch(e) {
-    setProgress(null);
-    btn.disabled = false;
-    resultsEl.innerHTML = `<div class="error-card">Claude API error: ${escHtml(e.message)}</div>`;
+    setProgress(null); btn.disabled = false;
+    resultsEl.innerHTML = '<div class="error-card">Claude API error: ' + escHtml(e.message) + '</div>';
     return;
   }
 
   if (!citations || citations.length === 0) {
-    setProgress(null);
-    btn.disabled = false;
-    resultsEl.innerHTML = `<div class="error-card">No ECtHR citations found in the text.</div>`;
+    setProgress(null); btn.disabled = false;
+    resultsEl.innerHTML = '<div class="error-card">No ECtHR citations found in the text.</div>';
     return;
   }
 
-  resultsEl.innerHTML = `
-    <div class="results-header">
-      <span class="results-title">Results</span>
-      <span class="results-count">${citations.length} citation${citations.length !== 1 ? 's' : ''} found</span>
-    </div>`;
+  resultsEl.innerHTML =
+    '<div class="results-header">' +
+    '<span class="results-title">Results</span>' +
+    '<span class="results-count">' + citations.length + ' citation' + (citations.length !== 1 ? 's' : '') + ' found</span>' +
+    '</div>';
 
   for (let i = 0; i < citations.length; i++) {
     const cit = citations[i];
-    setProgress(`Resolving ${cit.appno} (${i+1}/${citations.length})…`);
+    setProgress('Resolving ' + cit.appno + ' (' + (i+1) + '/' + citations.length + ')...');
 
     const card = document.createElement('div');
     card.className = 'citation-card';
@@ -450,57 +174,46 @@ async function run() {
 
     try {
       const meta = await hudocSearch(cit.appno);
-
       const paraLabel = cit.para_start > 0
-        ? (cit.para_start === cit.para_end
-            ? `§ ${cit.para_start}`
-            : `§§ ${cit.para_start}–${cit.para_end}`)
+        ? (cit.para_start === cit.para_end ? '\u00a7 ' + cit.para_start : '\u00a7\u00a7 ' + cit.para_start + '\u2013' + cit.para_end)
         : null;
 
-      card.innerHTML = `
-        <div class="card-header">
-          <div class="case-name">${escHtml(meta.docname)}</div>
-          <div class="case-meta">
-            <span>No. ${escHtml(cit.appno)}</span>
-            <span class="meta-tag">${escHtml(meta.date)}</span>
-            <span class="meta-tag">${escHtml(meta.type)}</span>
-            ${paraLabel ? `<span class="meta-tag">Cited: ${escHtml(paraLabel)}</span>` : ''}
-            <span class="meta-tag"><a href="https://hudoc.echr.coe.int/eng?i=${encodeURIComponent(meta.itemid)}" target="_blank">HUDOC ↗</a></span>
-          </div>
-        </div>
-        <div class="card-body" id="body-${i}">
-          ${paraLabel ? `<div class="para-label">Fetching ${escHtml(paraLabel)}…</div>` : '<div class="para-not-found">No paragraph number cited.</div>'}
-        </div>`;
+      card.innerHTML =
+        '<div class="card-header">' +
+          '<div class="case-name">' + escHtml(meta.docname) + '</div>' +
+          '<div class="case-meta">' +
+            '<span>No. ' + escHtml(cit.appno) + '</span>' +
+            '<span class="meta-tag">' + escHtml(meta.date) + '</span>' +
+            '<span class="meta-tag">' + escHtml(meta.type) + '</span>' +
+            (paraLabel ? '<span class="meta-tag">Cited: ' + escHtml(paraLabel) + '</span>' : '') +
+            '<span class="meta-tag"><a href="https://hudoc.echr.coe.int/eng?i=' + encodeURIComponent(meta.itemid) + '" target="_blank">HUDOC \u2197</a></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card-body" id="body-' + i + '">' +
+          (paraLabel ? '<div class="para-label">Fetching ' + escHtml(paraLabel) + '...</div>' : '<div class="para-not-found">No paragraph number cited.</div>') +
+        '</div>';
 
       if (cit.para_start > 0) {
-        setProgress(`Fetching full text for ${cit.appno}…`);
+        setProgress('Fetching full text for ' + cit.appno + '...');
         const paraText = await fetchParagraph(meta.itemid, cit.para_start, cit.para_end);
         const bodyEl = document.getElementById('body-' + i);
 
         if (paraText) {
-          const escaped = paraText.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
-          bodyEl.innerHTML = `
-            <div class="para-label">
-              Text of ${escHtml(paraLabel)}
-              <button class="copy-btn" onclick="copyText(this, \`${escaped}\`)">Copy</button>
-            </div>
-            <div class="para-text">${escHtml(paraText)}</div>`;
+          bodyEl.innerHTML =
+            '<div class="para-label">Text of ' + escHtml(paraLabel) +
+            ' <button class="copy-btn" onclick="copyPara(this, ' + i + ')">Copy</button></div>' +
+            '<div class="para-text" id="paratext-' + i + '">' + escHtml(paraText) + '</div>';
         } else {
-          bodyEl.innerHTML = `
-            <div class="para-label">${escHtml(paraLabel)}</div>
-            <div class="para-not-found">Paragraph text could not be located in the retrieved document.
-            <a href="https://hudoc.echr.coe.int/eng?i=${encodeURIComponent(meta.itemid)}" target="_blank">Open in HUDOC ↗</a></div>`;
+          bodyEl.innerHTML =
+            '<div class="para-label">' + escHtml(paraLabel) + '</div>' +
+            '<div class="para-not-found">Paragraph text could not be located. ' +
+            '<a href="https://hudoc.echr.coe.int/eng?i=' + encodeURIComponent(meta.itemid) + '" target="_blank">Open in HUDOC \u2197</a></div>';
         }
       }
-
     } catch(e) {
-      card.innerHTML = `
-        <div class="card-header">
-          <div class="case-name">No. ${escHtml(cit.appno)}${cit.case_hint ? ' — ' + escHtml(cit.case_hint) : ''}</div>
-        </div>
-        <div class="card-body">
-          <div class="error-card">${escHtml(e.message)}</div>
-        </div>`;
+      card.innerHTML =
+        '<div class="card-header"><div class="case-name">No. ' + escHtml(cit.appno) + (cit.case_hint ? ' \u2014 ' + escHtml(cit.case_hint) : '') + '</div></div>' +
+        '<div class="card-body"><div class="error-card">' + escHtml(e.message) + '</div></div>';
     }
   }
 
@@ -508,138 +221,87 @@ async function run() {
   btn.disabled = false;
 }
 
-function copyText(btn, text) {
+function copyPara(btn, i) {
+  const text = document.getElementById('paratext-' + i).textContent;
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = 'Copied';
     setTimeout(() => btn.textContent = 'Copy', 1500);
   });
 }
 
-// ── CLAUDE: EXTRACT CITATIONS ─────────────────────────────────────────────────
 async function extractCitations(text, apiKey) {
-  const system = `You are a legal assistant. Extract all ECtHR case citations from the text.
-Return ONLY a JSON array, no markdown, no other text.
-Each element: {"appno":"NNNNN/YY","para_start":N,"para_end":N,"case_hint":"Case Name"}.
-para_start and para_end are integers (cited paragraph numbers).
-If no paragraph cited, use 0 for both.
-For ranges like §§ 301-08, expand to full numbers (301, 308).
-Return [] if no citations found.`;
-
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type':      'application/json',
-      'x-api-key':         apiKey,
-      'anthropic-version': ANTHROPIC_VERSION,
-    },
-    body: JSON.stringify({
-      model:      CLAUDE_MODEL,
-      max_tokens: 1000,
-      system,
-      messages: [{ role: 'user', content: text }],
-    }),
+  const data = await claudePost(apiKey, {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1000,
+    system: 'You are a legal assistant. Extract all ECtHR case citations from the text. Return ONLY a JSON array, no markdown, no other text. Each element: {"appno":"NNNNN/YY","para_start":N,"para_end":N,"case_hint":"Case Name"}. para_start and para_end are integers. If no paragraph cited, use 0 for both. For ranges like SS 301-08, expand to full numbers (301, 308). Return [] if no citations found.',
+    messages: [{ role: 'user', content: text }],
   });
-
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(`HTTP ${resp.status}: ${err?.error?.message || resp.statusText}`);
-  }
-
-  const data = await resp.json();
-  const raw  = data.content?.[0]?.text || '[]';
-  const clean = raw.replace(/^```[a-z]*\n?/i, '').replace(/```$/,'').trim();
+  const raw   = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '[]';
+  const clean = raw.replace(/^```[a-z]*\n?/i, '').replace(/```$/, '').trim();
   return JSON.parse(clean);
 }
 
-// ── HUDOC SEARCH ──────────────────────────────────────────────────────────────
 async function hudocSearch(appno) {
-  const query = `contentsitename:ECHR AND ` +
-    `(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ` +
-    `(appno:"${appno}") AND ` +
-    `((documentcollectionid="JUDGMENTS") OR ` +
-    `(documentcollectionid="DECISIONS") OR ` +
-    `(documentcollectionid="GRANDCHAMBER"))`;
+  const query =
+    'contentsitename:ECHR AND ' +
+    '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ' +
+    '(appno:"' + appno + '") AND ' +
+    '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="DECISIONS") OR (documentcollectionid="GRANDCHAMBER"))';
 
-  const select = 'itemid,docname,appno,languageisocode,typedescription,kpdateAsText';
+  const params = new URLSearchParams({
+    query: query,
+    select: 'itemid,docname,appno,languageisocode,typedescription,kpdateAsText',
+    sort: 'kpdate Descending',
+    start: '0',
+    length: '10',
+    rankingModelId: '22222222-ffff-0000-0000-000000000000',
+  });
 
-  const hudocUrl = 'https://hudoc.echr.coe.int/app/query/results?' +
-    new URLSearchParams({
-      query, select,
-      sort:           'kpdate Descending',
-      start:          '0',
-      length:         '10',
-      rankingModelId: '22222222-ffff-0000-0000-000000000000',
-    });
-
-  const text = await proxyFetch(hudocUrl);
-  const data = JSON.parse(text);
-
+  const text    = await proxyFetch('https://hudoc.echr.coe.int/app/query/results?' + params);
+  const data    = JSON.parse(text);
   const results = data.results || [];
-  if (results.length === 0) throw new Error(`No HUDOC results for application no. ${appno}`);
+  if (results.length === 0) throw new Error('No HUDOC results for application no. ' + appno);
 
-  const result = results.find(r => r.columns?.languageisocode === 'ENG') || results[0];
+  const result = results.find(function(r) { return r.columns && r.columns.languageisocode === 'ENG'; }) || results[0];
   const c = result.columns || {};
-
-  return {
-    itemid:  c.itemid          || '',
-    docname: c.docname         || appno,
-    date:    c.kpdateAsText    || '',
-    type:    c.typedescription || '',
-  };
+  return { itemid: c.itemid || '', docname: c.docname || appno, date: c.kpdateAsText || '', type: c.typedescription || '' };
 }
 
-// ── FETCH PARAGRAPH ───────────────────────────────────────────────────────────
 async function fetchParagraph(itemid, paraStart, paraEnd) {
   if (!paraStart) return null;
-
-  const url = `https://hudoc.echr.coe.int/app/conversion/docx/body?library=ECHR&id=${encodeURIComponent(itemid)}`;
-  const html = await proxyFetch(url);
-  const plain = stripHtml(html);
-  return extractParaRange(plain, paraStart, paraEnd);
+  const html = await proxyFetch('https://hudoc.echr.coe.int/app/conversion/docx/body?library=ECHR&id=' + encodeURIComponent(itemid));
+  return extractParaRange(stripHtml(html), paraStart, paraEnd);
 }
 
 function stripHtml(html) {
-  let h = html
-    .replace(/<p[\s>]/gi, '\n<p')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<div[\s>]/gi, '\n')
-    .replace(/<\/div>/gi, '\n')
+  return html
+    .replace(/<p[\s>]/gi, '\n<p').replace(/<\/p>/gi, '\n')
+    .replace(/<div[\s>]/gi, '\n').replace(/<\/div>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&#167;/g, '§')
-    .replace(/&#8209;/g, '‑');
-  return h.replace(/<[^>]+>/g, '').replace(/\r/g, '');
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+    .replace(/&#167;/g, '\u00a7').replace(/&#8209;/g, '\u2011')
+    .replace(/<[^>]+>/g, '').replace(/\r/g, '');
 }
 
 function extractParaRange(text, paraStart, paraEnd) {
-  const lines = text.split('\n');
-  const positions = new Map();
-  let charPos = 0;
-
-  for (const line of lines) {
-    const trimmed = line.trimStart();
-    const m = trimmed.match(/^(\d{1,4})\.\s+/);
+  var lines    = text.split('\n');
+  var positions = new Map();
+  var charPos  = 0;
+  for (var j = 0; j < lines.length; j++) {
+    var m = lines[j].trimStart().match(/^(\d{1,4})\.\s+/);
     if (m) {
-      const n = parseInt(m[1], 10);
-      if (n >= 1 && n <= 2000 && !positions.has(n)) {
-        positions.set(n, charPos);
-      }
+      var n = parseInt(m[1], 10);
+      if (n >= 1 && n <= 2000 && !positions.has(n)) positions.set(n, charPos);
     }
-    charPos += line.length + 1;
+    charPos += lines[j].length + 1;
   }
-
   if (!positions.has(paraStart)) return null;
-
-  const startPos = positions.get(paraStart);
-  let endPos = text.length;
-
-  for (const [n, pos] of [...positions.entries()].sort((a,b) => a[0]-b[0])) {
-    if (n > paraEnd && pos > startPos) { endPos = pos; break; }
+  var startPos = positions.get(paraStart);
+  var endPos   = text.length;
+  var sorted   = Array.from(positions.entries()).sort(function(a,b){ return a[0]-b[0]; });
+  for (var k = 0; k < sorted.length; k++) {
+    if (sorted[k][0] > paraEnd && sorted[k][1] > startPos) { endPos = sorted[k][1]; break; }
   }
-
   return text.slice(startPos, endPos).trim() || null;
 }
 </script>
