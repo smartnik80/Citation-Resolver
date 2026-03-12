@@ -241,6 +241,14 @@ async function extractCitations(text, apiKey) {
   return JSON.parse(clean);
 }
 
+function fmtDate(iso) {
+  if (!iso) return '';
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var d = new Date(iso);
+  if (isNaN(d)) return (iso + '').split('T')[0] || iso;
+  return d.getUTCDate() + ' ' + months[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+}
+
 async function hudocSearch(appno) {
   const query =
     'contentsitename:ECHR AND ' +
@@ -250,7 +258,7 @@ async function hudocSearch(appno) {
 
   const params = new URLSearchParams({
     query: query,
-    select: 'itemid,docname,appno,languageisocode,typedescription,kpdateAsText',
+    select: 'itemid,docname,appno,languageisocode,typedescription,kpdate',
     sort: 'kpdate Descending',
     start: '0',
     length: '10',
@@ -264,12 +272,12 @@ async function hudocSearch(appno) {
 
   const result = results.find(function(r) { return r.columns && r.columns.languageisocode === 'ENG'; }) || results[0];
   const c = result.columns || {};
-  return { itemid: c.itemid || '', docname: c.docname || appno, date: c.kpdateAsText || '', type: c.typedescription || '' };
+  return { itemid: c.itemid || '', docname: c.docname || appno, date: fmtDate(c.kpdate), type: c.typedescription || '' };
 }
 
 async function fetchParagraph(itemid, paraStart, paraEnd) {
   if (!paraStart) return null;
-  const html = await proxyFetch('https://hudoc.echr.coe.int/app/conversion/docx/body?library=ECHR&id=' + encodeURIComponent(itemid));
+  const html = await proxyFetch('https://hudoc.echr.coe.int/app/conversion/docx/html/body?library=ECHR&id=' + encodeURIComponent(itemid));
   return extractParaRange(stripHtml(html), paraStart, paraEnd);
 }
 
