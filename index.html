@@ -276,10 +276,9 @@ async function hudocSearch(appno) {
     return lang === 'ENG' || lang === 'FRE';
   });
   var result =
-    engFre.find(function(r) { return r.columns.languageisocode === 'ENG' && !r.columns.isplaceholder; }) ||
-    engFre.find(function(r) { return r.columns.languageisocode === 'FRE' && !r.columns.isplaceholder; }) ||
-    engFre.find(function(r) { return r.columns.languageisocode === 'ENG'; }) ||
-    engFre[0] || results[0];
+    engFre.find(function(r) { return r.columns.languageisocode === 'ENG' && r.columns.isplaceholder !== 'True'; }) ||
+    engFre.find(function(r) { return r.columns.languageisocode === 'FRE' && r.columns.isplaceholder !== 'True'; }) ||
+    results[0];
   const c = result.columns || {};
   return { itemid: c.itemid || '', docname: c.docname || appno, date: fmtDate(c.kpdate), type: c.typedescription || '' };
 }
