@@ -286,7 +286,8 @@ function stripHtml(html) {
     .replace(/<p[\s>]/gi, '\n<p').replace(/<\/p>/gi, '\n')
     .replace(/<div[\s>]/gi, '\n').replace(/<\/div>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+    .replace(/&nbsp;/gi, ' ').replace(/&#xa0;/gi, ' ').replace(/&#160;/g, ' ')
+    .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
     .replace(/&#167;/g, '\u00a7').replace(/&#8209;/g, '\u2011')
     .replace(/<[^>]+>/g, '').replace(/\r/g, '');
 }
