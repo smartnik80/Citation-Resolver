@@ -30,7 +30,6 @@
     min-height: 100vh;
   }
 
-  /* Ruled paper texture */
   body::before {
     content: '';
     position: fixed;
@@ -54,7 +53,6 @@
     padding: 48px 32px 80px;
   }
 
-  /* Header */
   header {
     border-bottom: 3px double var(--rule);
     padding-bottom: 20px;
@@ -78,9 +76,7 @@
     color: var(--ink);
   }
 
-  h1 span {
-    color: var(--accent);
-  }
+  h1 span { color: var(--accent); }
 
   .subtitle {
     margin-top: 6px;
@@ -89,10 +85,7 @@
     color: var(--muted);
   }
 
-  /* Form */
-  .form-section {
-    margin-bottom: 28px;
-  }
+  .form-section { margin-bottom: 28px; }
 
   label {
     display: block;
@@ -151,7 +144,6 @@
   }
   .key-toggle:hover { border-color: var(--accent2); color: var(--accent2); }
 
-  /* Run button */
   .run-btn {
     display: flex;
     align-items: center;
@@ -171,10 +163,8 @@
   .run-btn:hover { background: #6b1212; }
   .run-btn:active { transform: translateY(1px); }
   .run-btn:disabled { background: var(--rule); cursor: not-allowed; }
-
   .run-btn svg { flex-shrink: 0; }
 
-  /* Progress */
   #progress {
     display: none;
     margin-top: 24px;
@@ -199,10 +189,7 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Results */
-  #results {
-    margin-top: 40px;
-  }
+  #results { margin-top: 40px; }
 
   .results-header {
     display: flex;
@@ -262,10 +249,7 @@
     letter-spacing: 0.05em;
   }
 
-  .case-meta a {
-    color: var(--accent2);
-    text-decoration: none;
-  }
+  .case-meta a { color: var(--accent2); text-decoration: none; }
   .case-meta a:hover { text-decoration: underline; }
 
   .meta-tag {
@@ -282,9 +266,7 @@
     border-radius: 50%;
   }
 
-  .card-body {
-    padding: 16px 18px;
-  }
+  .card-body { padding: 16px 18px; }
 
   .para-label {
     font-family: var(--mono);
@@ -323,14 +305,6 @@
     color: var(--accent);
   }
 
-  /* Divider */
-  hr {
-    border: none;
-    border-top: 1px solid var(--rule);
-    margin: 0;
-  }
-
-  /* Copy button */
   .copy-btn {
     background: none;
     border: 1px solid var(--rule);
@@ -346,7 +320,6 @@
   }
   .copy-btn:hover { border-color: var(--accent2); color: var(--accent2); }
 
-  /* Note at bottom */
   .footnote {
     margin-top: 48px;
     padding-top: 16px;
@@ -392,7 +365,7 @@
 
   <p class="footnote">
     Your API key is used only for this session and is never stored or transmitted anywhere other than api.anthropic.com.
-    Full judgment text is fetched directly from hudoc.echr.coe.int.
+    Full judgment text is fetched from hudoc.echr.coe.int via a private proxy.
   </p>
 
 </div>
@@ -401,6 +374,7 @@
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const CLAUDE_MODEL      = 'claude-sonnet-4-20250514';
 const ANTHROPIC_VERSION = '2023-06-01';
+const PROXY             = 'https://hudoc-proxy.smartnik80.workers.dev';
 
 // ── UI HELPERS ────────────────────────────────────────────────────────────────
 function toggleKey() {
@@ -418,7 +392,14 @@ function setProgress(msg) {
 }
 
 function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── PROXY FETCH ───────────────────────────────────────────────────────────────
+async function proxyFetch(url) {
+  const resp = await fetch(`${PROXY}?url=${encodeURIComponent(url)}`);
+  if (!resp.ok) throw new Error(`Proxy error: HTTP ${resp.status}`);
+  return resp.text();
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
@@ -434,7 +415,6 @@ async function run() {
   btn.disabled = true;
   resultsEl.innerHTML = '';
 
-  // Step 1: extract citations via Claude
   setProgress('Asking Claude to identify citations…');
   let citations;
   try {
@@ -453,14 +433,12 @@ async function run() {
     return;
   }
 
-  // Header
   resultsEl.innerHTML = `
     <div class="results-header">
       <span class="results-title">Results</span>
       <span class="results-count">${citations.length} citation${citations.length !== 1 ? 's' : ''} found</span>
     </div>`;
 
-  // Step 2: resolve each citation
   for (let i = 0; i < citations.length; i++) {
     const cit = citations[i];
     setProgress(`Resolving ${cit.appno} (${i+1}/${citations.length})…`);
@@ -471,10 +449,8 @@ async function run() {
     resultsEl.appendChild(card);
 
     try {
-      // Search HUDOC
       const meta = await hudocSearch(cit.appno);
 
-      // Build header
       const paraLabel = cit.para_start > 0
         ? (cit.para_start === cit.para_end
             ? `§ ${cit.para_start}`
@@ -496,17 +472,17 @@ async function run() {
           ${paraLabel ? `<div class="para-label">Fetching ${escHtml(paraLabel)}…</div>` : '<div class="para-not-found">No paragraph number cited.</div>'}
         </div>`;
 
-      // Fetch paragraph text if needed
       if (cit.para_start > 0) {
         setProgress(`Fetching full text for ${cit.appno}…`);
         const paraText = await fetchParagraph(meta.itemid, cit.para_start, cit.para_end);
         const bodyEl = document.getElementById('body-' + i);
 
         if (paraText) {
+          const escaped = paraText.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
           bodyEl.innerHTML = `
             <div class="para-label">
               Text of ${escHtml(paraLabel)}
-              <button class="copy-btn" onclick="copyText(this, \`${paraText.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button>
+              <button class="copy-btn" onclick="copyText(this, \`${escaped}\`)">Copy</button>
             </div>
             <div class="para-text">${escHtml(paraText)}</div>`;
         } else {
@@ -571,8 +547,6 @@ Return [] if no citations found.`;
 
   const data = await resp.json();
   const raw  = data.content?.[0]?.text || '[]';
-
-  // Strip markdown fences if present
   const clean = raw.replace(/^```[a-z]*\n?/i, '').replace(/```$/,'').trim();
   return JSON.parse(clean);
 }
@@ -588,31 +562,28 @@ async function hudocSearch(appno) {
 
   const select = 'itemid,docname,appno,languageisocode,typedescription,kpdateAsText';
 
-  const url = 'https://hudoc.echr.coe.int/app/query/results?' +
+  const hudocUrl = 'https://hudoc.echr.coe.int/app/query/results?' +
     new URLSearchParams({
-      query,
-      select,
+      query, select,
       sort:           'kpdate Descending',
       start:          '0',
       length:         '10',
       rankingModelId: '22222222-ffff-0000-0000-000000000000',
     });
 
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`HUDOC search failed: HTTP ${resp.status}`);
-  const data = await resp.json();
+  const text = await proxyFetch(hudocUrl);
+  const data = JSON.parse(text);
 
   const results = data.results || [];
   if (results.length === 0) throw new Error(`No HUDOC results for application no. ${appno}`);
 
-  // Prefer English
   const result = results.find(r => r.columns?.languageisocode === 'ENG') || results[0];
   const c = result.columns || {};
 
   return {
-    itemid:  c.itemid   || '',
-    docname: c.docname  || appno,
-    date:    c.kpdateAsText   || '',
+    itemid:  c.itemid          || '',
+    docname: c.docname         || appno,
+    date:    c.kpdateAsText    || '',
     type:    c.typedescription || '',
   };
 }
@@ -622,16 +593,12 @@ async function fetchParagraph(itemid, paraStart, paraEnd) {
   if (!paraStart) return null;
 
   const url = `https://hudoc.echr.coe.int/app/conversion/docx/body?library=ECHR&id=${encodeURIComponent(itemid)}`;
-  const resp = await fetch(url);
-  if (!resp.ok) return null;
-
-  const html = await resp.text();
+  const html = await proxyFetch(url);
   const plain = stripHtml(html);
   return extractParaRange(plain, paraStart, paraEnd);
 }
 
 function stripHtml(html) {
-  // Insert newlines at block tags
   let h = html
     .replace(/<p[\s>]/gi, '\n<p')
     .replace(/<\/p>/gi, '\n')
@@ -644,15 +611,11 @@ function stripHtml(html) {
     .replace(/&gt;/gi, '>')
     .replace(/&#167;/g, '§')
     .replace(/&#8209;/g, '‑');
-
-  // Strip tags
   return h.replace(/<[^>]+>/g, '').replace(/\r/g, '');
 }
 
 function extractParaRange(text, paraStart, paraEnd) {
   const lines = text.split('\n');
-
-  // Build map: paraNum → char offset
   const positions = new Map();
   let charPos = 0;
 
@@ -671,9 +634,8 @@ function extractParaRange(text, paraStart, paraEnd) {
   if (!positions.has(paraStart)) return null;
 
   const startPos = positions.get(paraStart);
-
-  // Find end: first paragraph after paraEnd
   let endPos = text.length;
+
   for (const [n, pos] of [...positions.entries()].sort((a,b) => a[0]-b[0])) {
     if (n > paraEnd && pos > startPos) { endPos = pos; break; }
   }
