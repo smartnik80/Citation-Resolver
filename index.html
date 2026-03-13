@@ -58,6 +58,8 @@
   .error-card { padding: 12px 16px; border-left: 3px solid var(--accent); background: rgba(139,26,26,0.06); font-family: var(--mono); font-size: 11.5px; color: var(--accent); }
   .copy-btn { background: none; border: 1px solid var(--rule); padding: 5px 10px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: var(--muted); cursor: pointer; float: right; margin-top: -2px; transition: border-color 0.15s, color 0.15s; }
   .copy-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .copy-all-btn { background: none; border: 1px solid var(--rule); padding: 5px 14px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  .copy-all-btn:hover { border-color: var(--accent2); color: var(--accent2); }
   .footnote { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 11.5px; font-style: italic; color: var(--muted); line-height: 1.6; }
 </style>
 </head>
@@ -82,6 +84,7 @@
 </div>
 <script>
 const WORKER = 'https://hudoc-proxy.smartnik80.workers.dev';
+let resolvedCitations = [];
 
 function setProgress(msg) {
   const el = document.getElementById('progress');
@@ -122,6 +125,7 @@ async function run() {
 
   btn.disabled = true;
   resultsEl.innerHTML = '';
+  resolvedCitations = [];
 
   setProgress('Asking Claude to identify citations...');
   let citations;
@@ -142,7 +146,10 @@ async function run() {
   resultsEl.innerHTML =
     '<div class="results-header">' +
     '<span class="results-title">Results</span>' +
+    '<span style="display:flex;align-items:center;gap:16px">' +
     '<span class="results-count">' + citations.length + ' citation' + (citations.length !== 1 ? 's' : '') + ' found</span>' +
+    '<button class="copy-all-btn" id="copyAllBtn" style="display:none" onclick="copyAll()">Copy all</button>' +
+    '</span>' +
     '</div>';
 
   for (let i = 0; i < citations.length; i++) {
@@ -175,9 +182,10 @@ async function run() {
           (paraLabel ? '<div class="para-label">Fetching ' + escHtml(paraLabel) + '...</div>' : '<div class="para-not-found">No paragraph number cited.</div>') +
         '</div>';
 
+      let paraText = null;
       if (cit.para_start > 0) {
         setProgress('Fetching full text for ' + cit.appno + '...');
-        const paraText = await fetchParagraph(meta.itemid, cit.para_start, cit.para_end);
+        paraText = await fetchParagraph(meta.itemid, cit.para_start, cit.para_end);
         const bodyEl = document.getElementById('body-' + i);
 
         if (paraText) {
@@ -192,15 +200,30 @@ async function run() {
             '<a href="https://hudoc.echr.coe.int/eng?i=' + encodeURIComponent(meta.itemid) + '" target="_blank">Open in HUDOC \u2197</a></div>';
         }
       }
+
+      resolvedCitations.push({
+        caseName:  meta.docname,
+        caseType:  cit.case_type || '',
+        appno:     cit.appno,
+        date:      meta.date,
+        hudocType: meta.type,
+        paraLabel: paraLabel,
+        paraText:  paraText,
+        itemid:    meta.itemid,
+      });
     } catch(e) {
       card.innerHTML =
         '<div class="card-header"><div class="case-name">No. ' + escHtml(cit.appno) + (cit.case_hint ? ' \u2014 ' + escHtml(cit.case_hint) : '') + '</div></div>' +
         '<div class="card-body"><div class="error-card">' + escHtml(e.message) + '</div></div>';
+      resolvedCitations.push({ appno: cit.appno, caseHint: cit.case_hint || '', error: e.message });
     }
   }
 
   setProgress(null);
   btn.disabled = false;
+  if (resolvedCitations.some(function(r) { return !r.error; })) {
+    document.getElementById('copyAllBtn').style.display = '';
+  }
 }
 
 function copyPara(btn, i) {
@@ -208,6 +231,43 @@ function copyPara(btn, i) {
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = 'Copied';
     setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+function copyAll() {
+  const sourceText = document.getElementById('inputText').value.trim();
+  const rule = '\u2500'.repeat(60);
+  let out = sourceText + '\n\n' + rule + '\n\nCITED PARAGRAPHS\n';
+
+  for (const r of resolvedCitations) {
+    out += '\n' + rule + '\n\n';
+    if (r.error) {
+      out += 'No. ' + r.appno + (r.caseHint ? ' \u2014 ' + r.caseHint : '') + '\n';
+      out += '[Could not resolve: ' + r.error + ']\n';
+    } else {
+      // Attribution line in ECtHR citation style
+      let attr = r.caseName;
+      if (r.caseType) attr += ' [' + r.caseType + ']';
+      attr += ', no. ' + r.appno;
+      if (r.paraLabel) attr += ', ' + r.paraLabel;
+      attr += ', ' + r.date;
+      out += attr + '\n\n';
+      if (r.paraText) {
+        out += r.paraText + '\n';
+      } else if (r.paraLabel) {
+        out += '[Paragraph text not available \u2014 ' + 'https://hudoc.echr.coe.int/eng?i=' + r.itemid + ']\n';
+      } else {
+        out += '[No paragraph cited]\n';
+      }
+    }
+  }
+
+  out += '\n' + rule;
+
+  const btn = document.getElementById('copyAllBtn');
+  navigator.clipboard.writeText(out).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy all'; }, 1500);
   });
 }
 
