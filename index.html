@@ -316,11 +316,10 @@ async function hudocResolve(cit) {
 
 // Step 1: search by whatever is available to recover missing appno / date
 async function hudocStep1(appno, date, caseHint) {
-  // Assume Chamber judgment for incomplete citations (GC cases typically have their appno)
   const base =
     'contentsitename:ECHR AND ' +
     '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ' +
-    '(documentcollectionid="JUDGMENTS")';
+    '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="GRANDCHAMBER"))';
 
   // Search by docname (title field) to avoid matching documents that merely cite the case
   var query = '(docname:"' + caseHint.replace(/"/g, '') + '") AND ' + base;
