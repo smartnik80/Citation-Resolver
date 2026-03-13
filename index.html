@@ -154,7 +154,7 @@ async function run() {
 
   for (let i = 0; i < citations.length; i++) {
     const cit = citations[i];
-    setProgress('Resolving ' + cit.appno + ' (' + (i+1) + '/' + citations.length + ')...');
+    setProgress('Resolving ' + (cit.appno || cit.case_hint || 'citation') + ' (' + (i+1) + '/' + citations.length + ')...');
 
     const card = document.createElement('div');
     card.className = 'citation-card';
@@ -162,7 +162,7 @@ async function run() {
     resultsEl.appendChild(card);
 
     try {
-      const meta = await hudocSearch(cit.appno);
+      const meta = await hudocResolve(cit);
       const paraLabel = cit.para_start > 0
         ? (cit.para_start === cit.para_end ? '\u00a7 ' + cit.para_start : '\u00a7\u00a7 ' + cit.para_start + '\u2013' + cit.para_end)
         : null;
@@ -275,7 +275,7 @@ async function extractCitations(text) {
   const data = await claudePost({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1000,
-    system: 'You are a legal assistant specialising in ECtHR case law. Extract ALL ECtHR case citations from the text, including those introduced by "see", "compare", "contrast", "mutatis mutandis", or any other framing.\nReturn ONLY a JSON array, no markdown, no other text.\nRules:\n- Each citation becomes one array element, identified by its application number (format: NNNNN/YY, preceded by "no." or "nos.")\n- If a citation has multiple application numbers (e.g. "nos. 71671/16 and 40190/18"), use the first one only\n- para_start and para_end: use the lowest cited paragraph number for para_start and the highest for para_end, whether the paragraphs form a range (\u00a7\u00a7 43-44) or a non-sequential list (\u00a7\u00a7 284, 181 and 175 \u2192 175 to 284)\n- For abbreviated ranges like \u00a7\u00a7 301-08, expand to full numbers (301 to 308)\n- If no paragraph is cited, use 0 for both para_start and para_end\n- case_type: extract "GC", "dec.", or "just satisfaction" if present near the case name; otherwise leave as empty string\n- case_hint: the case name only, without any type markers\nEach element: {"appno":"NNNNN/YY","para_start":N,"para_end":N,"case_hint":"Case Name","case_type":""}\nReturn [] if no citations found.',
+    system: 'You are a legal assistant specialising in ECtHR case law. Extract ALL ECtHR case citations from the text, including those introduced by "see", "compare", "contrast", "mutatis mutandis", "cited above", or any other framing.\nReturn ONLY a JSON array, no markdown, no other text.\nRules:\n- Each citation becomes one array element\n- appno: the application number in format NNNNN/YY (preceded by "no." or "nos."); if absent from the text, use ""\n- If a citation has multiple application numbers (e.g. "nos. 71671/16 and 40190/18"), use the first one only\n- date: the judgment/decision date as it appears in the citation text, converted to YYYY-MM-DD; if absent, use ""\n- para_start and para_end: use the lowest cited paragraph number for para_start and the highest for para_end, whether the paragraphs form a range (\u00a7\u00a7 43-44) or a non-sequential list (\u00a7\u00a7 284, 181 and 175 \u2192 175 to 284)\n- For abbreviated ranges like \u00a7\u00a7 301-08, expand to full numbers (301 to 308)\n- If no paragraph is cited, use 0 for both para_start and para_end\n- case_type: extract "GC", "dec.", or "just satisfaction" if present near the case name; otherwise leave as empty string\n- case_hint: the case name only, without any type markers; for "cited above" references, use the case name from earlier in the text if identifiable\nEach element: {"appno":"NNNNN/YY","date":"YYYY-MM-DD","para_start":N,"para_end":N,"case_hint":"Case Name","case_type":""}\nReturn [] if no citations found.',
     messages: [{ role: 'user', content: text }],
   });
   const raw   = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '[]';
@@ -291,7 +291,78 @@ function fmtDate(iso) {
   return d.getUTCDate() + ' ' + months[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
 }
 
-async function hudocSearch(appno) {
+// ── HUDOC RESOLUTION ──────────────────────────────────────────────────────────
+
+// Orchestrator: Step 1 (conditional) → Step 2 (always)
+async function hudocResolve(cit) {
+  var appno = cit.appno || '';
+  var date  = cit.date  || '';
+
+  if (!appno && !date && !cit.case_hint) {
+    throw new Error('Cannot resolve: no application number, date, or case name available');
+  }
+
+  // Step 1: recover missing appno or date from HUDOC
+  if (!appno || !date) {
+    var recovered = await hudocStep1(appno, date, cit.case_hint || '');
+    appno = recovered.appno || appno;
+    date  = recovered.date  || date;
+    if (!appno) throw new Error('Could not recover application number for "' + (cit.case_hint || 'unknown') + '"');
+  }
+
+  // Step 2: final retrieval using appno + date
+  return await hudocStep2(appno, date);
+}
+
+// Step 1: search by whatever is available to recover missing appno / date
+async function hudocStep1(appno, date, caseHint) {
+  const base =
+    'contentsitename:ECHR AND ' +
+    '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ' +
+    '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="DECISIONS") OR (documentcollectionid="GRANDCHAMBER"))';
+
+  var query;
+  if (appno) {
+    // Have appno, need date: search by appno
+    query = base + ' AND (appno:"' + appno + '")';
+  } else {
+    // Need appno: search by case name as free-text query
+    query = '"' + caseHint.replace(/"/g, '') + '" AND ' + base;
+  }
+
+  const params = new URLSearchParams({
+    query: query,
+    select: 'itemid,docname,appno,languageisocode,isplaceholder,kpdate',
+    sort: 'kpdate Descending', start: '0', length: '5',
+    rankingModelId: '22222222-ffff-0000-0000-000000000000',
+  });
+
+  const text    = await proxyFetch('https://hudoc.echr.coe.int/app/query/results?' + params);
+  const results = (JSON.parse(text).results || []).filter(function(r) {
+    var lang = r.columns && r.columns.languageisocode;
+    return lang === 'ENG' || lang === 'FRE';
+  });
+
+  if (results.length === 0) return { appno: appno, date: date };
+
+  // If we have a date, prefer a result whose kpdate matches it
+  var match = results[0];
+  if (date) {
+    var dated = results.find(function(r) {
+      return r.columns && r.columns.kpdate && r.columns.kpdate.startsWith(date);
+    });
+    if (dated) match = dated;
+  }
+
+  const c = match.columns || {};
+  return {
+    appno: c.appno  || appno,
+    date:  date     || (c.kpdate ? c.kpdate.slice(0, 10) : ''),
+  };
+}
+
+// Step 2: structured retrieval by appno, filtered by date + language + placeholder
+async function hudocStep2(appno, date) {
   const query =
     'contentsitename:ECHR AND ' +
     '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ' +
@@ -301,26 +372,33 @@ async function hudocSearch(appno) {
   const params = new URLSearchParams({
     query: query,
     select: 'itemid,docname,appno,languageisocode,isplaceholder,typedescription,kpdate',
-    sort: 'kpdate Descending',
-    start: '0',
-    length: '10',
+    sort: 'kpdate Descending', start: '0', length: '10',
     rankingModelId: '22222222-ffff-0000-0000-000000000000',
   });
 
   const text    = await proxyFetch('https://hudoc.echr.coe.int/app/query/results?' + params);
-  const data    = JSON.parse(text);
-  const results = data.results || [];
+  const results = JSON.parse(text).results || [];
   if (results.length === 0) throw new Error('No HUDOC results for application no. ' + appno);
 
-  // Only consider ENG and FRE; prefer non-placeholder ENG, then non-placeholder FRE
-  const engFre = results.filter(function(r) {
+  // Restrict to ENG/FRE; if date available, prefer matching date
+  var candidates = results.filter(function(r) {
     var lang = r.columns && r.columns.languageisocode;
     return lang === 'ENG' || lang === 'FRE';
   });
+  if (candidates.length === 0) candidates = results;
+
+  if (date) {
+    var dated = candidates.filter(function(r) {
+      return r.columns && r.columns.kpdate && r.columns.kpdate.startsWith(date);
+    });
+    if (dated.length > 0) candidates = dated;
+  }
+
   var result =
-    engFre.find(function(r) { return r.columns.languageisocode === 'ENG' && r.columns.isplaceholder !== 'True'; }) ||
-    engFre.find(function(r) { return r.columns.languageisocode === 'FRE' && r.columns.isplaceholder !== 'True'; }) ||
-    results[0];
+    candidates.find(function(r) { return r.columns.languageisocode === 'ENG' && r.columns.isplaceholder !== 'True'; }) ||
+    candidates.find(function(r) { return r.columns.languageisocode === 'FRE' && r.columns.isplaceholder !== 'True'; }) ||
+    candidates[0];
+
   const c = result.columns || {};
   return { itemid: c.itemid || '', docname: c.docname || appno, date: fmtDate(c.kpdate), type: c.typedescription || '' };
 }
