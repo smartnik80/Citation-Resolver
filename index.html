@@ -321,8 +321,8 @@ async function hudocStep1(appno, date, caseHint) {
     '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ' +
     '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="DECISIONS") OR (documentcollectionid="GRANDCHAMBER"))';
 
-  // Always lead with case name; add appno as constraint when already known
-  var query = '"' + caseHint.replace(/"/g, '') + '" AND ' + base;
+  // Search by docname (title field) to avoid matching documents that merely cite the case
+  var query = '(docname:"' + caseHint.replace(/"/g, '') + '") AND ' + base;
   if (appno) query += ' AND (appno:"' + appno + '")';
 
   const params = new URLSearchParams({
