@@ -154,7 +154,7 @@ async function run() {
 
   for (let i = 0; i < citations.length; i++) {
     const cit = citations[i];
-    setProgress('Resolving ' + (cit.appno || cit.case_hint || 'citation') + ' (' + (i+1) + '/' + citations.length + ')...');
+    setProgress('Resolving ' + (cit.appno || cit.casename || 'citation') + ' (' + (i+1) + '/' + citations.length + ')...');
 
     const card = document.createElement('div');
     card.className = 'citation-card';
@@ -213,9 +213,9 @@ async function run() {
       });
     } catch(e) {
       card.innerHTML =
-        '<div class="card-header"><div class="case-name">No. ' + escHtml(cit.appno) + (cit.case_hint ? ' \u2014 ' + escHtml(cit.case_hint) : '') + '</div></div>' +
+        '<div class="card-header"><div class="case-name">No. ' + escHtml(cit.appno) + (cit.casename ? ' \u2014 ' + escHtml(cit.casename) : '') + '</div></div>' +
         '<div class="card-body"><div class="error-card">' + escHtml(e.message) + '</div></div>';
-      resolvedCitations.push({ appno: cit.appno, caseHint: cit.case_hint || '', error: e.message });
+      resolvedCitations.push({ appno: cit.appno, casename: cit.casename || '', error: e.message });
     }
   }
 
@@ -242,7 +242,7 @@ function copyAll() {
   for (const r of resolvedCitations) {
     out += '\n' + rule + '\n\n';
     if (r.error) {
-      out += 'No. ' + r.appno + (r.caseHint ? ' \u2014 ' + r.caseHint : '') + '\n';
+      out += 'No. ' + r.appno + (r.casename ? ' \u2014 ' + r.casename : '') + '\n';
       out += '[Could not resolve: ' + r.error + ']\n';
     } else {
       // Attribution line in ECtHR citation style
@@ -275,7 +275,7 @@ async function extractCitations(text) {
   const data = await claudePost({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1000,
-    system: 'You are a legal assistant specialising in ECtHR case law. Extract ALL ECtHR case citations from the text, including those introduced by "see", "compare", "contrast", "mutatis mutandis", "cited above", or any other framing.\nReturn ONLY a JSON array, no markdown, no other text.\nRules:\n- Each citation becomes one array element\n- appno: the application number in format NNNNN/YY (preceded by "no." or "nos."); if absent from the text, use ""\n- If a citation has multiple application numbers (e.g. "nos. 71671/16 and 40190/18"), use the first one only\n- date: the judgment/decision date as it appears in the citation text, converted to YYYY-MM-DD; if absent, use ""\n- para_start and para_end: use the lowest cited paragraph number for para_start and the highest for para_end, whether the paragraphs form a range (\u00a7\u00a7 43-44) or a non-sequential list (\u00a7\u00a7 284, 181 and 175 \u2192 175 to 284)\n- For abbreviated ranges like \u00a7\u00a7 301-08, expand to full numbers (301 to 308)\n- If no paragraph is cited, use 0 for both para_start and para_end\n- case_type: extract "GC", "dec.", or "just satisfaction" if present near the case name; otherwise leave as empty string\n- case_hint: the case name only, without any type markers; for "cited above" references, use the case name from earlier in the text if identifiable\nEach element: {"appno":"NNNNN/YY","date":"YYYY-MM-DD","para_start":N,"para_end":N,"case_hint":"Case Name","case_type":""}\nReturn [] if no citations found.',
+    system: 'You are a legal assistant specialising in ECtHR case law. Extract ALL ECtHR case citations from the text, including those introduced by "see", "compare", "contrast", "mutatis mutandis", "cited above", or any other framing.\nReturn ONLY a JSON array, no markdown, no other text.\nRules:\n- Each citation becomes one array element\n- appno: the application number in format NNNNN/YY (preceded by "no." or "nos."); if absent from the text, use ""\n- If a citation has multiple application numbers (e.g. "nos. 71671/16 and 40190/18"), use the first one only\n- date: the judgment/decision date as it appears in the citation text, converted to YYYY-MM-DD; if absent, use ""\n- para_start and para_end: use the lowest cited paragraph number for para_start and the highest for para_end, whether the paragraphs form a range (\u00a7\u00a7 43-44) or a non-sequential list (\u00a7\u00a7 284, 181 and 175 \u2192 175 to 284)\n- For abbreviated ranges like \u00a7\u00a7 301-08, expand to full numbers (301 to 308)\n- If no paragraph is cited, use 0 for both para_start and para_end\n- casename: the case name only, without any type markers; always present in any reference including "cited above" ones\n- case_type: extract "GC", "dec.", or "just satisfaction" if present near the case name; otherwise leave as empty string\nEach element: {"casename":"Case Name","appno":"NNNNN/YY","date":"YYYY-MM-DD","para_start":N,"para_end":N,"case_type":""}\nReturn [] if no citations found.',
     messages: [{ role: 'user', content: text }],
   });
   const raw   = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '[]';
@@ -298,16 +298,16 @@ async function hudocResolve(cit) {
   var appno = cit.appno || '';
   var date  = cit.date  || '';
 
-  if (!appno && !date && !cit.case_hint) {
+  if (!appno && !date && !cit.casename) {
     throw new Error('Cannot resolve: no application number, date, or case name available');
   }
 
   // Step 1: recover missing appno or date from HUDOC
   if (!appno || !date) {
-    var recovered = await hudocStep1(appno, date, cit.case_hint || '');
+    var recovered = await hudocStep1(appno, date, cit.casename || '');
     appno = recovered.appno || appno;
     date  = recovered.date  || date;
-    if (!appno) throw new Error('Could not recover application number for "' + (cit.case_hint || 'unknown') + '"');
+    if (!appno) throw new Error('Could not recover application number for "' + (cit.casename || 'unknown') + '"');
   }
 
   // Step 2: final retrieval using appno + date
