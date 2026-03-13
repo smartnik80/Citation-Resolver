@@ -45,6 +45,7 @@
   @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .card-header { padding: 14px 18px 12px; border-bottom: 1px solid var(--rule); background: rgba(200,191,168,0.2); }
   .case-name { font-size: 16px; font-weight: 700; margin-bottom: 5px; }
+  .case-type-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.07em; color: var(--muted); background: rgba(200,191,168,0.4); padding: 2px 7px; margin-left: 9px; vertical-align: middle; }
   .case-meta { display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.05em; }
   .case-meta a { color: var(--accent2); text-decoration: none; }
   .case-meta a:hover { text-decoration: underline; }
@@ -161,7 +162,7 @@ async function run() {
 
       card.innerHTML =
         '<div class="card-header">' +
-          '<div class="case-name">' + escHtml(meta.docname) + '</div>' +
+          '<div class="case-name">' + escHtml(meta.docname) + (cit.case_type ? '<span class="case-type-badge">' + escHtml(cit.case_type) + '</span>' : '') + '</div>' +
           '<div class="case-meta">' +
             '<span>No. ' + escHtml(cit.appno) + '</span>' +
             '<span class="meta-tag">' + escHtml(meta.date) + '</span>' +
@@ -214,7 +215,7 @@ async function extractCitations(text) {
   const data = await claudePost({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1000,
-    system: 'You are a legal assistant. Extract all ECtHR case citations from the text. Return ONLY a JSON array, no markdown, no other text. Each element: {"appno":"NNNNN/YY","para_start":N,"para_end":N,"case_hint":"Case Name"}. para_start and para_end are integers. If no paragraph cited, use 0 for both. For ranges like SS 301-08, expand to full numbers (301, 308). Return [] if no citations found.',
+    system: 'You are a legal assistant specialising in ECtHR case law. Extract ALL ECtHR case citations from the text, including those introduced by "see", "compare", "contrast", "mutatis mutandis", or any other framing.\nReturn ONLY a JSON array, no markdown, no other text.\nRules:\n- Each citation becomes one array element, identified by its application number (format: NNNNN/YY, preceded by "no." or "nos.")\n- If a citation has multiple application numbers (e.g. "nos. 71671/16 and 40190/18"), use the first one only\n- para_start and para_end: use the lowest cited paragraph number for para_start and the highest for para_end, whether the paragraphs form a range (\u00a7\u00a7 43-44) or a non-sequential list (\u00a7\u00a7 284, 181 and 175 \u2192 175 to 284)\n- For abbreviated ranges like \u00a7\u00a7 301-08, expand to full numbers (301 to 308)\n- If no paragraph is cited, use 0 for both para_start and para_end\n- case_type: extract "GC", "dec.", or "just satisfaction" if present near the case name; otherwise leave as empty string\n- case_hint: the case name only, without any type markers\nEach element: {"appno":"NNNNN/YY","para_start":N,"para_end":N,"case_hint":"Case Name","case_type":""}\nReturn [] if no citations found.',
     messages: [{ role: 'user', content: text }],
   });
   const raw   = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '[]';
