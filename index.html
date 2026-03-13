@@ -274,7 +274,7 @@ function copyAll() {
 async function extractCitations(text) {
   const data = await claudePost({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 1000,
+    max_tokens: 4096,
     system: 'You are a legal assistant specialising in ECtHR case law. Extract ALL ECtHR case citations from the text, including those introduced by "see", "compare", "contrast", "mutatis mutandis", "cited above", or any other framing.\nReturn ONLY a JSON array, no markdown, no other text.\nRules:\n- Each citation becomes one array element\n- appno: the application number in format NNNNN/YY (preceded by "no." or "nos."); if absent from the text, use ""\n- If a citation has multiple application numbers (e.g. "nos. 71671/16 and 40190/18"), use the first one only\n- date: the judgment/decision date as it appears in the citation text, converted to YYYY-MM-DD; if absent, use ""\n- para_start and para_end: use the lowest cited paragraph number for para_start and the highest for para_end, whether the paragraphs form a range (\u00a7\u00a7 43-44) or a non-sequential list (\u00a7\u00a7 284, 181 and 175 \u2192 175 to 284)\n- For abbreviated ranges like \u00a7\u00a7 301-08, expand to full numbers (301 to 308)\n- If no paragraph is cited, use 0 for both para_start and para_end\n- casename: the case name only, without any type markers; always present in any reference including "cited above" ones\n- case_type: extract "GC", "dec.", or "just satisfaction" if present near the case name; otherwise leave as empty string\nEach element: {"casename":"Case Name","appno":"NNNNN/YY","date":"YYYY-MM-DD","para_start":N,"para_end":N,"case_type":""}\nReturn [] if no citations found.',
     messages: [{ role: 'user', content: text }],
   });
