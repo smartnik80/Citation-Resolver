@@ -66,7 +66,7 @@
 <body>
 <div class="shell">
   <header>
-    <div class="court-mark">European Court of Human Rights &nbsp;·&nbsp; <span id="ver">v2.2</span></div>
+    <div class="court-mark">European Court of Human Rights &nbsp;·&nbsp; <span id="ver">v2.3</span></div>
     <h1>Citation <span>Resolver</span></h1>
     <p class="subtitle">Paste legal text below — citations are extracted and paragraphs retrieved from HUDOC automatically.</p>
   </header>
@@ -286,9 +286,12 @@ async function extractCitations(text) {
 function fmtDate(iso) {
   if (!iso) return '';
   var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var d = new Date(iso);
-  if (isNaN(d)) return (iso + '').split('T')[0] || iso;
-  return d.getUTCDate() + ' ' + months[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  var parts = (iso + '').split('T')[0].split('-');
+  if (parts.length === 3) {
+    var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1, d = parseInt(parts[2], 10);
+    if (!isNaN(y) && months[m] && !isNaN(d)) return d + ' ' + months[m] + ' ' + y;
+  }
+  return (iso + '').split('T')[0];
 }
 
 // ── HUDOC RESOLUTION ──────────────────────────────────────────────────────────
