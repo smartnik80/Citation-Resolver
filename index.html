@@ -66,7 +66,7 @@
 <body>
 <div class="shell">
   <header>
-    <div class="court-mark">European Court of Human Rights &nbsp;·&nbsp; <span id="ver">v2.1</span></div>
+    <div class="court-mark">European Court of Human Rights &nbsp;·&nbsp; <span id="ver">v2.2</span></div>
     <h1>Citation <span>Resolver</span></h1>
     <p class="subtitle">Paste legal text below — citations are extracted and paragraphs retrieved from HUDOC automatically.</p>
   </header>
@@ -318,7 +318,7 @@ async function hudocResolve(cit) {
 async function hudocStep1(appno, date, caseHint, justs) {
   const base =
     'contentsitename:ECHR AND ' +
-    (justs ? '(typedescription=T12)' : '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD OR typedescription=T12))') + ' AND ' +
+    (justs ? '(typedescription=12)' : '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD OR typedescription=12))') + ' AND ' +
     '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="GRANDCHAMBER"))';
 
   // Search by docname (title field) to avoid matching documents that merely cite the case
@@ -361,7 +361,7 @@ async function hudocStep1(appno, date, caseHint, justs) {
 async function hudocStep2(appno, date, justs) {
   const query =
     'contentsitename:ECHR AND ' +
-    (justs ? '(typedescription=T12)' : '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD OR typedescription=T12))') + ' AND ' +
+    (justs ? '(typedescription=12)' : '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD OR typedescription=12))') + ' AND ' +
     '(appno:"' + appno + '") AND ' +
     '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="DECISIONS") OR (documentcollectionid="GRANDCHAMBER"))';
 
