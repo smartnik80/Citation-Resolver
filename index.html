@@ -321,14 +321,9 @@ async function hudocStep1(appno, date, caseHint) {
     '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ' +
     '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="DECISIONS") OR (documentcollectionid="GRANDCHAMBER"))';
 
-  var query;
-  if (appno) {
-    // Have appno, need date: search by appno
-    query = base + ' AND (appno:"' + appno + '")';
-  } else {
-    // Need appno: search by case name as free-text query
-    query = '"' + caseHint.replace(/"/g, '') + '" AND ' + base;
-  }
+  // Always lead with case name; add appno as constraint when already known
+  var query = '"' + caseHint.replace(/"/g, '') + '" AND ' + base;
+  if (appno) query += ' AND (appno:"' + appno + '")';
 
   const params = new URLSearchParams({
     query: query,
