@@ -318,7 +318,7 @@ async function hudocResolve(cit) {
 async function hudocStep1(appno, date, caseHint) {
   const base =
     'contentsitename:ECHR AND ' +
-    '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ' +
+    '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD OR doctype=JUDJUSTS)) AND ' +
     '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="GRANDCHAMBER"))';
 
   // Search by docname (title field) to avoid matching documents that merely cite the case
