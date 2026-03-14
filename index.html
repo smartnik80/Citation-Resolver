@@ -339,7 +339,6 @@ async function hudocStep1(appno, date, caseHint, justs) {
   const base =
     'contentsitename:ECHR AND ' +
     (justs ? '(typedescription=12)' : '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD OR typedescription=12))') + ' AND ' +
-    '(languageisocode=ENG) AND ' +
     '((documentcollectionid="CHAMBER") OR (documentcollectionid="GRANDCHAMBER"))';
 
   // Search by docname (title field) to avoid matching documents that merely cite the case
@@ -354,7 +353,10 @@ async function hudocStep1(appno, date, caseHint, justs) {
   });
 
   const text    = await proxyFetch('https://hudoc.echr.coe.int/app/query/results?' + params);
-  const results = JSON.parse(text).results || [];
+  const results = (JSON.parse(text).results || []).filter(function(r) {
+    var lang = r.columns && r.columns.languageisocode;
+    return lang === 'ENG' || lang === 'FRE';
+  });
 
   if (results.length === 0) return { appno: appno, date: date };
 
