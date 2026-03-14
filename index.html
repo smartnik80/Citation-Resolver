@@ -328,7 +328,7 @@ async function hudocStep1(appno, date, caseHint, justs) {
   const base =
     'contentsitename:ECHR AND ' +
     (justs ? '(typedescription=12)' : '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD OR typedescription=12))') + ' AND ' +
-    '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="GRANDCHAMBER"))';
+    '((documentcollectionid="CHAMBER") OR (documentcollectionid="GRANDCHAMBER"))';
 
   // Search by docname (title field) to avoid matching documents that merely cite the case
   var query = '(docname:"' + caseHint.replace(/"/g, '') + '") AND ' + base;
