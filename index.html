@@ -324,15 +324,19 @@ async function hudocResolve(cit) {
 }
 
 // Score how well a HUDOC docname matches the case name hint:
-// sum the character lengths of tokens in the docname that are NOT in the hint
-// (fewer/shorter extra tokens = closer match)
+// strip "CASE OF"/"AFFAIRE" prefix and respondent state (" v. ..."/" c. ...")
+// from both strings, then sum character lengths of leftover tokens in the
+// docname that are not in the hint (fewer/shorter extra tokens = closer match)
 function scoreDocname(docname, hint) {
-  var norm = function(s) {
+  var prepare = function(s) {
     return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().replace(/[^a-z0-9]/g, ' ').trim().split(/\s+/).filter(Boolean);
+      .toLowerCase()
+      .replace(/^(?:case of|affaire)\s+/, '')
+      .replace(/\s+(?:v\.|c\.)\s+.*$/, '')
+      .replace(/[^a-z0-9]/g, ' ').trim().split(/\s+/).filter(Boolean);
   };
-  var hintSet = new Set(norm(hint));
-  return norm(docname)
+  var hintSet = new Set(prepare(hint));
+  return prepare(docname)
     .filter(function(t) { return !hintSet.has(t); })
     .reduce(function(sum, t) { return sum + t.length; }, 0);
 }
