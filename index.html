@@ -71,7 +71,10 @@
     <p class="subtitle">Paste legal text below — citations are extracted and paragraphs retrieved from HUDOC automatically.</p>
   </header>
   <div class="form-section">
-    <label for="inputText">Legal text containing citations</label>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px;">
+      <label for="inputText" style="margin-bottom:0;">Legal text containing citations</label>
+      <button onclick="document.getElementById('inputText').value=''" style="background:none;border:none;font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:0;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Clear</button>
+    </div>
     <textarea id="inputText" placeholder="e.g. (see Bazjaks v. Latvia, no. 71572/01, § 85, 19 October 2010)"></textarea>
   </div>
   <button class="run-btn" id="runBtn" onclick="run()">
