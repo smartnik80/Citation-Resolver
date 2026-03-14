@@ -323,11 +323,23 @@ async function hudocResolve(cit) {
   return await hudocStep2(appno, date, cit.case_type === 'just satisfaction');
 }
 
+// Score how well a HUDOC docname matches the case name hint:
+// count tokens in the docname that are NOT in the hint (fewer = closer match)
+function scoreDocname(docname, hint) {
+  var norm = function(s) {
+    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]/g, ' ').trim().split(/\s+/).filter(Boolean);
+  };
+  var hintSet = new Set(norm(hint));
+  return norm(docname).filter(function(t) { return !hintSet.has(t); }).length;
+}
+
 // Step 1: search by whatever is available to recover missing appno / date
 async function hudocStep1(appno, date, caseHint, justs) {
   const base =
     'contentsitename:ECHR AND ' +
     (justs ? '(typedescription=12)' : '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD OR typedescription=12))') + ' AND ' +
+    '(languageisocode=ENG) AND ' +
     '((documentcollectionid="CHAMBER") OR (documentcollectionid="GRANDCHAMBER"))';
 
   // Search by docname (title field) to avoid matching documents that merely cite the case
@@ -337,20 +349,24 @@ async function hudocStep1(appno, date, caseHint, justs) {
   const params = new URLSearchParams({
     query: query,
     select: 'itemid,docname,appno,languageisocode,isplaceholder,kpdate',
-    sort: 'kpdate Descending', start: '0', length: '5',
+    sort: 'kpdate Descending', start: '0', length: '10',
     rankingModelId: '22222222-ffff-0000-0000-000000000000',
   });
 
   const text    = await proxyFetch('https://hudoc.echr.coe.int/app/query/results?' + params);
-  const results = (JSON.parse(text).results || []).filter(function(r) {
-    var lang = r.columns && r.columns.languageisocode;
-    return lang === 'ENG' || lang === 'FRE';
-  });
+  const results = JSON.parse(text).results || [];
 
   if (results.length === 0) return { appno: appno, date: date };
 
-  // If we have a date, prefer a result whose kpdate matches it
-  var match = results[0];
+  // Pick the result whose docname has the fewest extra tokens beyond the caseHint
+  var match = caseHint
+    ? results.reduce(function(best, r) {
+        return scoreDocname((r.columns && r.columns.docname) || '', caseHint) <
+               scoreDocname((best.columns && best.columns.docname) || '', caseHint) ? r : best;
+      }, results[0])
+    : results[0];
+
+  // If we have a date, a result matching that date takes priority
   if (date) {
     var dated = results.find(function(r) {
       return r.columns && r.columns.kpdate && r.columns.kpdate.startsWith(date);
