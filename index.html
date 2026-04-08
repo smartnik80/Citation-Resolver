@@ -53,7 +53,7 @@
   .meta-tag::before { content: ''; display: inline-block; width: 5px; height: 5px; background: var(--rule); border-radius: 50%; }
   .card-body { padding: 16px 18px; }
   .para-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-  .para-text { font-size: 13.5px; line-height: 1.75; padding: 14px 18px; border-left: 3px solid var(--accent); background: rgba(139,26,26,0.04); white-space: pre-wrap; }
+  .para-text { font-size: 13.5px; line-height: 1.75; padding: 14px 18px; border-left: 3px solid var(--accent); background: rgba(139,26,26,0.04); white-space: pre-wrap; max-height: 480px; overflow-y: auto; }
   .para-not-found { font-family: var(--mono); font-size: 11px; color: var(--muted); padding: 10px 0; font-style: italic; }
   .error-card { padding: 12px 16px; border-left: 3px solid var(--accent); background: rgba(139,26,26,0.06); font-family: var(--mono); font-size: 11.5px; color: var(--accent); }
   .copy-btn { background: none; border: 1px solid var(--rule); padding: 5px 10px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: var(--muted); cursor: pointer; float: right; margin-top: -2px; transition: border-color 0.15s, color 0.15s; }
@@ -66,7 +66,7 @@
 <body>
 <div class="shell">
   <header>
-    <div class="court-mark">European Court of Human Rights &nbsp;·&nbsp; <span id="ver">v2.5</span></div>
+    <div class="court-mark">European Court of Human Rights &nbsp;·&nbsp; <span id="ver">v2.6</span></div>
     <h1>Citation <span>Resolver</span></h1>
     <p class="subtitle">Paste legal text below — citations are extracted and paragraphs retrieved from HUDOC automatically.</p>
   </header>
@@ -81,6 +81,13 @@
     <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
     Resolve Citations
   </button>
+  <div id="citations-editor" style="display:none;margin-top:24px;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px;">
+      <label style="margin-bottom:0;">Extracted citations <span style="font-weight:400;font-size:10px;letter-spacing:0;">(edit if needed, then re-resolve)</span></label>
+      <button id="reResolveBtn" onclick="resolveEdited()" class="copy-all-btn">Re-resolve</button>
+    </div>
+    <textarea id="citationsJson" style="min-height:160px;font-family:var(--mono);font-size:11.5px;line-height:1.55;"></textarea>
+  </div>
   <div id="progress"></div>
   <div id="results"></div>
   <p class="footnote">Citation extraction uses the Anthropic API via your private Cloudflare Worker. Judgment text is fetched from hudoc.echr.coe.int via the same Worker.</p>
@@ -123,12 +130,14 @@ async function run() {
   const inputText = document.getElementById('inputText').value.trim();
   const btn       = document.getElementById('runBtn');
   const resultsEl = document.getElementById('results');
+  const editorEl  = document.getElementById('citations-editor');
 
   if (!inputText) { alert('Please paste some text first.'); return; }
 
   btn.disabled = true;
   resultsEl.innerHTML = '';
   resolvedCitations = [];
+  editorEl.style.display = 'none';
 
   setProgress('Asking Claude to identify citations...');
   let citations;
@@ -145,6 +154,35 @@ async function run() {
     resultsEl.innerHTML = '<div class="error-card">No ECtHR citations found in the text.</div>';
     return;
   }
+
+  document.getElementById('citationsJson').value = JSON.stringify(citations, null, 2);
+  editorEl.style.display = '';
+
+  await runResolution(citations);
+}
+
+async function resolveEdited() {
+  let citations;
+  try {
+    citations = JSON.parse(document.getElementById('citationsJson').value);
+  } catch(e) {
+    alert('Invalid JSON: ' + e.message); return;
+  }
+  if (!Array.isArray(citations) || citations.length === 0) {
+    alert('No citations to resolve.'); return;
+  }
+  await runResolution(citations);
+}
+
+async function runResolution(citations) {
+  const btn    = document.getElementById('runBtn');
+  const reBtn  = document.getElementById('reResolveBtn');
+  const resultsEl = document.getElementById('results');
+
+  btn.disabled = true;
+  reBtn.disabled = true;
+  resultsEl.innerHTML = '';
+  resolvedCitations = [];
 
   resultsEl.innerHTML =
     '<div class="results-header">' +
@@ -182,7 +220,8 @@ async function run() {
           '</div>' +
         '</div>' +
         '<div class="card-body" id="body-' + i + '">' +
-          (paraLabel ? '<div class="para-label">Fetching ' + escHtml(paraLabel) + '...</div>' : '<div class="para-not-found">No paragraph number cited.</div>') +
+          (paraLabel ? '<div class="para-label">Fetching ' + escHtml(paraLabel) + '...</div>'
+                     : '<div class="para-label">Fetching judgment text\u2026</div>') +
         '</div>';
 
       let paraText = null;
@@ -200,6 +239,21 @@ async function run() {
           bodyEl.innerHTML =
             '<div class="para-label">' + escHtml(paraLabel) + '</div>' +
             '<div class="para-not-found">Paragraph text could not be located. ' +
+            '<a href="https://hudoc.echr.coe.int/eng?i=' + encodeURIComponent(meta.itemid) + '" target="_blank">Open in HUDOC \u2197</a></div>';
+        }
+      } else {
+        setProgress('Fetching judgment text for ' + cit.appno + '...');
+        paraText = await fetchLawSection(meta.itemid);
+        const bodyEl = document.getElementById('body-' + i);
+
+        if (paraText) {
+          bodyEl.innerHTML =
+            '<div class="para-label">The Law / En Droit' +
+            ' <button class="copy-btn" onclick="copyPara(this, ' + i + ')">Copy</button></div>' +
+            '<div class="para-text" id="paratext-' + i + '">' + escHtml(paraText) + '</div>';
+        } else {
+          bodyEl.innerHTML =
+            '<div class="para-not-found">Could not extract judgment text. ' +
             '<a href="https://hudoc.echr.coe.int/eng?i=' + encodeURIComponent(meta.itemid) + '" target="_blank">Open in HUDOC \u2197</a></div>';
         }
       }
@@ -224,6 +278,7 @@ async function run() {
 
   setProgress(null);
   btn.disabled = false;
+  reBtn.disabled = false;
   if (resolvedCitations.some(function(r) { return !r.error; })) {
     document.getElementById('copyAllBtn').style.display = '';
   }
@@ -437,6 +492,21 @@ async function fetchParagraph(itemid, paraStart, paraEnd) {
   if (!paraStart) return null;
   const html = await proxyFetch('https://hudoc.echr.coe.int/app/conversion/docx/html/body?library=ECHR&id=' + encodeURIComponent(itemid));
   return extractParaRange(stripHtml(html), paraStart, paraEnd);
+}
+
+async function fetchLawSection(itemid) {
+  const html = await proxyFetch('https://hudoc.echr.coe.int/app/conversion/docx/html/body?library=ECHR&id=' + encodeURIComponent(itemid));
+  return extractLawSection(stripHtml(html));
+}
+
+function extractLawSection(text) {
+  var startRe = /^(THE LAW|EN DROIT)\s*$/m;
+  var endRe   = /^(FOR THESE REASONS,\s*THE COURT|PAR CES MOTIFS,\s*LA COUR)/m;
+  var startMatch = startRe.exec(text);
+  if (!startMatch) return null;
+  var sub = text.slice(startMatch.index + startMatch[0].length);
+  var endMatch = endRe.exec(sub);
+  return sub.slice(0, endMatch ? endMatch.index : sub.length).trim() || null;
 }
 
 function stripHtml(html) {
