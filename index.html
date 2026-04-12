@@ -66,7 +66,7 @@
 <body>
 <div class="shell">
   <header>
-    <div class="court-mark">European Court of Human Rights</div>
+    <div class="court-mark">European Court of Human Rights &middot; V2.7</div>
     <h1>Citation <span>Resolver</span></h1>
     <p class="subtitle">Paste legal text below — citations are extracted and paragraphs retrieved from HUDOC automatically.</p>
   </header>
@@ -173,7 +173,7 @@ async function run() {
     resultsEl.appendChild(card);
 
     try {
-      const meta = await hudocSearch(cit.appno);
+      const meta = await hudocSearch(cit.appno, cit.case_name || cit.case_hint);
       const paraLabel = cit.para_start > 0
         ? (cit.para_start === cit.para_end ? '\u00a7 ' + cit.para_start : '\u00a7\u00a7 ' + cit.para_start + '\u2013' + cit.para_end)
         : null;
@@ -212,7 +212,7 @@ async function run() {
       }
     } catch(e) {
       card.innerHTML =
-        '<div class="card-header"><div class="case-name">No. ' + escHtml(cit.appno) + (cit.case_hint ? ' \u2014 ' + escHtml(cit.case_hint) : '') + '</div></div>' +
+        '<div class="card-header"><div class="case-name">No. ' + escHtml(cit.appno) + (cit.case_name ? ' \u2014 ' + escHtml(cit.case_name) : '') + '</div></div>' +
         '<div class="card-body"><div class="error-card">' + escHtml(e.message) + '</div></div>';
     }
   }
@@ -229,11 +229,123 @@ function copyPara(btn, i) {
   });
 }
 
+// ─── Taxonomy ──────────────────────────────────────────────────────────────────
+// Maps patterns found in cited case names (EN + FR) to HUDOC typedescription
+// numeric IDs, used directly as query filters.
+//
+// Official typedescription IDs (from HUDOC taxonomy):
+//   Decisions:  8=Decision  9=Decision (Partial)  10=Decision (Final)  20=Decision (P9)
+//   Judgments: 11=Interpretation  12=Just Satisfaction  13=Lack of Jurisdiction
+//              14=Merits  15=Merits and Just Satisfaction  16=Preliminary Objection
+//              17=Questions of Procedure  18=Revision  19=Struck out of the List
+//              26=Article 46 § 4
+//
+// [GC] / (GC) is handled separately via documentcollectionid=GRANDCHAMBER —
+// it signals which chamber, not the type of document.
+
+const TYPE_RULES = [
+  // ── Decisions (EN: "(dec.)" / "(decision)" / "(admissibility)"
+  //              FR: "(déc.)" / "(décision)" / "(recevabilité)") ─────────────
+  {
+    id:     'decision',
+    nameRx: [/\(d[eé]c\.?\)/i, /\(d[eé]cision\)/i,
+             /\(admissibility\)/i, /\(recevabilit[eé]\)/i],
+    typeIds: [8, 9, 10, 20],
+  },
+  // ── Just satisfaction — Article 41 (current) / Article 50 (pre-1998) ──────
+  // EN: "(just satisfaction)" / "(Article 41)" / "(Art. 41)" / "(Article 50)"
+  // FR: "(satisfaction équitable)"
+  {
+    id:     'just-satisfaction',
+    nameRx: [/\(just[\s-]+satisfaction\)/i, /\(satisfaction[\s-]+[eé]quitable\)/i,
+             /\(article\s+41\)/i, /\(art\.?\s*41\)/i,
+             /\(article\s+50\)/i, /\(art\.?\s*50\)/i],
+    typeIds: [12, 15],
+  },
+  // ── Merits (including admissibility and merits combined) ──────────────────
+  // EN: "(merits)" / "(admissibility and merits)"
+  // FR: "(fond)" / "(au fond)" / "(recevabilité et fond)"
+  {
+    id:     'merits',
+    nameRx: [/\(merits\)/i, /\(fond\)/i, /\(au fond\)/i,
+             /\(admissibility\s+and\s+merits\)/i, /\(recevabilit[eé]\s+et\s+fond\)/i],
+    typeIds: [14, 15],
+  },
+  // ── Friendly settlement / struck out of the list ──────────────────────────
+  // EN: "(friendly settlement)" / "(striking out)" / "(struck out)"
+  // FR: "(règlement amiable)" / "(radiation du rôle)" / "(radiation)"
+  {
+    id:     'striking-out',
+    nameRx: [/\(friendly[\s-]+settlement\)/i, /\(r[eè]glement\s+amiable\)/i,
+             /\(striking[\s-]+out\)/i, /\(struck[\s-]+out\)/i,
+             /\(radiation(?:\s+du\s+r[ôo]le)?\)/i],
+    typeIds: [19],
+  },
+  // ── Interpretation of judgment ────────────────────────────────────────────
+  // EN: "(interpretation)"  FR: "(interprétation)"
+  {
+    id:     'interpretation',
+    nameRx: [/\(interpretation\)/i, /\(interpr[eé]tation\)/i],
+    typeIds: [11],
+  },
+  // ── Revision ──────────────────────────────────────────────────────────────
+  // EN: "(revision)"  FR: "(révision)"
+  {
+    id:     'revision',
+    nameRx: [/\(r[eé]vision\)/i],
+    typeIds: [18],
+  },
+  // ── Preliminary objections ────────────────────────────────────────────────
+  // EN: "(preliminary objections)"  FR: "(exceptions préliminaires)"
+  {
+    id:     'preliminary-objections',
+    nameRx: [/\(preliminary\s+objections?\)/i, /\(exceptions?\s+pr[eé]liminaires?\)/i],
+    typeIds: [16],
+  },
+  // ── Article 46 § 4 (infringement proceedings) ─────────────────────────────
+  {
+    id:     'art46-4',
+    nameRx: [/\(article\s+46\s*§\s*4\)/i, /\(art\.?\s*46\s*§\s*4\)/i],
+    typeIds: [26],
+  },
+];
+
+// Returns the matching TYPE_RULES entry, or null.
+function detectTypeRule(caseName) {
+  if (!caseName) return null;
+  for (var i = 0; i < TYPE_RULES.length; i++) {
+    if (TYPE_RULES[i].nameRx.some(function(rx) { return rx.test(caseName); })) {
+      return TYPE_RULES[i];
+    }
+  }
+  return null;
+}
+
+// True when the case name contains a Grand Chamber indicator.
+function isGrandChamber(caseName) {
+  return /\[GC\]|\(GC\)|\(grande\s+chambre\)/i.test(caseName || '');
+}
+
+// ─── Citation extraction ────────────────────────────────────────────────────
+
 async function extractCitations(text, apiKey) {
   const data = await claudePost(apiKey, {
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 1000,
-    system: 'You are a legal assistant. Extract all ECtHR case citations from the text. Return ONLY a JSON array, no markdown, no other text. Each element: {"appno":"NNNNN/YY","para_start":N,"para_end":N,"case_hint":"Case Name"}. para_start and para_end are integers. If no paragraph cited, use 0 for both. For ranges like SS 301-08, expand to full numbers (301, 308). Return [] if no citations found.',
+    max_tokens: 1200,
+    system: [
+      'You are a legal assistant. Extract all ECtHR case citations from the text.',
+      'Return ONLY a JSON array, no markdown, no other text.',
+      'Each element: {"appno":"NNNNN/YY","para_start":N,"para_end":N,"case_name":"Full Case Name"}.',
+      'Rules:',
+      '- para_start / para_end are integers (0 if no paragraph cited).',
+      '- For ranges like §§ 301-08, expand to full numbers (301 and 308).',
+      '- case_name must be the FULL verbatim case name exactly as it appears, including ALL qualifiers',
+      '  such as (dec.), (déc.), [GC], (GC), (just satisfaction), (satisfaction équitable),',
+      '  (Article 41), (Article 50), (preliminary objections), (exceptions préliminaires),',
+      '  (merits), (fond), (interpretation), (interprétation), (revision), (révision),',
+      '  (friendly settlement), (règlement amiable), (striking out), (radiation), etc.',
+      '- Return [] if no ECtHR citations found.',
+    ].join(' '),
     messages: [{ role: 'user', content: text }],
   });
   const raw   = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '[]';
@@ -241,19 +353,38 @@ async function extractCitations(text, apiKey) {
   return JSON.parse(clean);
 }
 
-async function hudocSearch(appno) {
-  const query =
+// ─── HUDOC search ───────────────────────────────────────────────────────────
+
+async function hudocSearch(appno, caseName) {
+  var gc       = isGrandChamber(caseName);
+  var typeRule = detectTypeRule(caseName);
+
+  // documentcollectionid: restrict to GRANDCHAMBER for [GC] cases;
+  // otherwise search all three collections.
+  var collectionFilter = gc
+    ? '(documentcollectionid="GRANDCHAMBER")'
+    : '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="DECISIONS") OR (documentcollectionid="GRANDCHAMBER"))';
+
+  // typedescription: add a numeric-ID filter when the case name signals a
+  // specific document type (e.g. "(dec.)" → 8/9/10/20, "(just satisfaction)" → 12/15).
+  var typeFilter = typeRule
+    ? '(' + typeRule.typeIds.map(function(id) { return 'typedescription=' + id; }).join(' OR ') + ')'
+    : null;
+
+  var query =
     'contentsitename:ECHR AND ' +
     '(NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ' +
     '(appno:"' + appno + '") AND ' +
-    '((documentcollectionid="JUDGMENTS") OR (documentcollectionid="DECISIONS") OR (documentcollectionid="GRANDCHAMBER"))';
+    collectionFilter;
+
+  if (typeFilter) query += ' AND ' + typeFilter;
 
   const params = new URLSearchParams({
-    query: query,
-    select: 'itemid,docname,appno,languageisocode,typedescription,kpdateAsText',
-    sort: 'kpdate Descending',
-    start: '0',
-    length: '10',
+    query:          query,
+    select:         'itemid,docname,appno,languageisocode,typedescription,kpdateAsText',
+    sort:           'kpdate Descending',
+    start:          '0',
+    length:         '10',
     rankingModelId: '22222222-ffff-0000-0000-000000000000',
   });
 
